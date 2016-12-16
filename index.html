@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>Devoted FactoryMod Config</title>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.1/css/bootstrap-select.min.css">
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+        <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="js/js-yaml.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <script type="text/javascript">
+    var factories;
+    var recipes;
+    var totalHealth;
+    $(document).ready(function() {
+        var url = "https://raw.githubusercontent.com/DevotedMC/FactoryMod/master/src/main/resources/configDevoted.yml";
+        $.get(url, function(data) {
+            var config = jsyaml.load(data);
+            factories = config.factories;
+            recipes = config.recipes;
+            totalHealth = config.default_health;
+           $.each(factories, function(key, value) {
+              $("#factories").append('<tr><td><a href="" onclick="selectFactory(this); return false;" id="' + key + '">' + value.name + '</a></td></tr>');
+           });
+           loadFactory(factories[Object.keys(factories)[0]]);
+        });
+        $('h3').click(function(e) {
+            var id = $(this).id;
+            window.alert(id);
+        });
+    });
+    
+    function selectFactory(link) {
+        var factory = factories[link.id];
+        if(!factory) {
+            $.each(factories, function(key, value) {
+                if(value.name === link.id) {
+                    loadFactory(value);
+                }
+            });
+        } else {
+            loadFactory(factory);
+        }
+    }
+    
+    function loadFactory(factory) {
+        $("#factory_name").text(factory.name);
+        $("#recipes").html("");
+        if(factory.setupcost) {
+            $("#setup").html("Setup Cost: ");
+            $.each(factory.setupcost, function(key, value) {
+                $("#setup").append(value.amount + " " + key.replace(/_/g, ' ') + ", ");
+            });
+        } else {
+            $("#setup").html("Upgrades from: ");
+            $.each(recipes, function(name, recipe) {
+                if(recipe.type === "UPGRADE" && recipe.factory === factory.name) {
+                    $.each(factories, function(id, f) {
+                        if(f.recipes.includes(name)) {
+                            $("#setup").append(f.name + ' with ');
+                        }
+                    });
+                    $.each(recipe.input, function(id, input) {
+                        $("#setup").append(input.amount + " " + id.replace(/_/g, ' ') + ", ");
+                    });
+                }
+            });
+        }
+        var text = $("#setup").html();
+        text = text.substring(0, text.length - 2);
+        $("#setup").html(text);
+        $.each(factory.recipes, function(i, name) {
+            recipe = recipes[name];
+            name = name.replace(/ /g, '_');
+            var time = recipe.production_time;
+            $("#recipes").append('<div style="margin: 0 auto;">');
+            $("#recipes").append('<h3>' + recipe.name + '</h3>')
+            $("#recipes").append('<h4 id="in_' + name + '" style="margin-left: 20px">Input: </h4>');
+            $.each(recipe.input, function(key, value) {
+                $("#in_" + name).append(value.amount + " " + key.replace(/_/g, ' ') + ', ');
+            });
+            var str = $("#in_" + name).html();
+            str = str.substring(0, str.length -2);
+            $("#in_" + name).html(str);
+            if(recipe.type === "PRODUCTION") {
+                $("#recipes").append('<h4 id="out_' + name + '" style="margin-left: 20px">Output: </h4>');
+                $.each(recipe.output, function(key, value) {
+                    $("#out_" + name).append(value.amount + " " + key.replace(/_/g, ' ') +  ', ');
+                });
+                var txt = $("#out_" + name).html();
+                txt = txt.substring(0, txt.length - 2);
+                $("#out_" + name).html(txt);
+            } else if(recipe.type === "UPGRADE") {
+                $("#recipes").append('<h4 style="margin-left: 20px">Upgrades to: <a href="" onclick="selectFactory(this); return false;" id="' + recipe.factory + '">' + recipe.factory + '</a></h4>');
+            } else if(recipe.type === "REPAIR") {
+                $("#recipes").append('<h4 style="margin-left: 20px">Repairs: 10% health</h4>');
+            }
+            $("#recipes").append('<h4 style="margin-left: 20px">Production Time: ' + time + '</h4>');
+            $("#recipes").append('</div>');
+        });
+    }
+    
+    function searchfunction() {
+        var input, filter, table, tr, td, i;
+        input = document.getElementById("search");
+        filter = input.value.toUpperCase();
+        table = document.getElementById("factories");
+        tr = table.getElementsByTagName("tr");
+        for(i = 0; i < tr.length; i++) {
+            td = tr[i].getElementsByTagName("td")[0];
+            if(td) {
+                if(td.innerHTML.toUpperCase().indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+    }
+    </script>
+  </head>
+  <body>
+    <h1>Devoted FactoryMod</h1>
+    <div id="sidebar" style="float: left; width: 200px">
+        <input style="width: 100%" type="text" id="search" onkeyup="searchfunction()" placeholder="Search...">
+        <table style="width: 100%" class="table table-bordered" id="factories"></table>
+    </div>
+    <div id="main" style="overflow: hidden;">
+        <div class="well">
+            <h1 id="factory_name">Factory Name</h1>
+            <h2 id="setup"></h2>
+            <div style="margin: 0 auto;">
+                <h2>Recipes</h2>
+                <div style="margin-left: 20px" id="recipes"></div>
+            </div>
+        </div>
+    </div>
+  </body>
+</html>
