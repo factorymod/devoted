@@ -25,13 +25,15 @@
     var factories;
     var recipes;
     var totalHealth;
+    var config;
     $(document).ready(function() {
         var url = "https://raw.githubusercontent.com/DevotedMC/FactoryMod/master/src/main/resources/configDevoted.yml";
         $.get(url, function(data) {
-            var config = jsyaml.load(data);
+            config = jsyaml.load(data);
             factories = config.factories;
             recipes = config.recipes;
             totalHealth = config.default_health;
+            defaultFuel = config.default_fuel;
            $.each(factories, function(key, value) {
               $("#factories").append('<tr><td><a href="" onclick="selectFactory(this); return false;" id="' + key + '">' + value.name + '</a></td></tr>');
            });
@@ -82,6 +84,13 @@
         var text = $("#setup").html();
         text = text.substring(0, text.length - 2);
         $("#setup").html(text);
+        var fuelName;
+        if(factory.fuel) {
+            fuelName = Object.keys(factory.fuel)[0];
+        } else {
+            fuelName = Object.keys(config.default_fuel)[0];
+        }
+        $("#fuel").html("Fuel: " + fuelName);
         $.each(factory.recipes, function(i, name) {
             recipe = recipes[name];
             name = name.replace(/ /g, '_');
@@ -134,6 +143,7 @@
   </head>
   <body>
     <h1>Devoted FactoryMod</h1>
+    <div>
     <div id="sidebar" style="float: left; width: 200px">
         <input style="width: 100%" type="text" id="search" onkeyup="searchfunction()" placeholder="Search...">
         <table style="width: 100%" class="table table-bordered" id="factories"></table>
@@ -142,11 +152,13 @@
         <div class="well">
             <h1 id="factory_name">Factory Name</h1>
             <h2 id="setup"></h2>
+            <h2 id="fuel"></h2>
             <div style="margin: 0 auto;">
                 <h2>Recipes</h2>
                 <div style="margin-left: 20px" id="recipes"></div>
             </div>
         </div>
+    </div>
     </div>
   </body>
 </html>
